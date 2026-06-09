@@ -1,0 +1,43 @@
+name: Publish — anvaya-events-lib
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "src/**"
+      - "pom.xml"
+  workflow_dispatch:
+
+# ──────────────────────────────────────────────────────────────────
+# Builds the JAR and deploys it to GitHub Packages (Maven registry).
+# Consuming services (employer-core-module, jobseeker-core-module,
+# recruitment-agency-module) resolve it from there — no mvn install needed.
+# ──────────────────────────────────────────────────────────────────
+jobs:
+  publish:
+    name: Build & Publish to GitHub Packages
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+          server-id: github
+          server-username: MAVEN_USERNAME
+          server-password: MAVEN_TOKEN
+
+      - name: Publish JAR to GitHub Packages
+        run: mvn --batch-mode deploy -DskipTests
+        env:
+          MAVEN_USERNAME: ${{ github.actor }}
+          MAVEN_TOKEN: ${{ secrets.GITHUB_TOKEN }}
